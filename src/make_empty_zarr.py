@@ -619,3 +619,4 @@ def create_empty_geozarr_single_variable_from_inventory(
         zarr_format=3,
         use_zarr_fill_value_as_mask=use_zarr_fill_value_as_mask,
     )
+

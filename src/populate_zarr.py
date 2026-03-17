@@ -56,72 +56,96 @@ def read_odim_data_as_float32(
     out_dtype: Any = np.float32,
 ) -> np.ndarray:
     """
-    Read an ODIM HDF raster and convert it to physical units.
+    Read an ODIM HDF raster and convert raw values to physical units.
 
-    The ODIM convention uses:
-
-        physical_value = offset + gain * raw_value
-
-    If present, the ``nodata`` and ``undetect`` values are masked to NaN.
-
-    Parameters
-    ----------
-    hdf_path
-        Path to the ODIM HDF file.
-    dataset
-        ODIM dataset group name.
-    data_name
-        ODIM data group name.
-    out_dtype
-        Output NumPy dtype, typically ``np.float32``.
-
-    Returns
-    -------
-    np.ndarray
-        2D raster in physical units with invalid values replaced by NaN.
+    Behavior:
+    - if gain is missing -> use 1.0
+    - if offset is missing -> use 0.0
+    - nodata -> NaN
+    - undetect -> 0.0 after scaling
     """
     data_path = f"{dataset}/{data_name}/data"
-    metadata_path = f"{dataset}/{data_name}/what"
+    what_path = f"{dataset}/{data_name}/what"
+
+    def _to_python_scalar(value):
+        if value is None:
+            return None
+        if isinstance(value, np.ndarray):
+            if value.size == 0:
+                return None
+            if value.size == 1:
+                return _to_python_scalar(value.reshape(-1)[0])
+            return value
+        if isinstance(value, np.generic):
+            return value.item()
+        if isinstance(value, (bytes, np.bytes_)):
+            item = value.item() if isinstance(value, np.bytes_) else value
+            return item.decode(errors="replace") if hasattr(item, "decode") else str(item)
+        return value
+
+    def _attrs_to_dict(attrs):
+        out = {}
+        for k, v in attrs.items():
+            key = k.decode("utf-8") if isinstance(k, (bytes, np.bytes_)) else str(k)
+            out[key] = _to_python_scalar(v)
+        return out
+
+    def _to_float(value, default):
+        value = _to_python_scalar(value)
+        if value is None:
+            return default
+        try:
+            return float(value)
+        except Exception:
+            return default
 
     with h5py.File(hdf_path, "r") as handle:
-        raw = handle[data_path][...]
-        attrs = handle[metadata_path].attrs
+        if data_path not in handle:
+            raise KeyError(f"Missing ODIM data dataset '{data_path}' in {hdf_path}")
+        if what_path not in handle:
+            raise KeyError(f"Missing ODIM metadata group '{what_path}' in {hdf_path}")
 
-        gain = float(attrs.get("gain", 1.0))
-        offset = float(attrs.get("offset", 0.0))
-        nodata = attrs.get("nodata", None)
-        undetect = attrs.get("undetect", None)
+        raw = np.asarray(handle[data_path][...])
+        what_attrs = _attrs_to_dict(handle[what_path].attrs)
+        data_attrs = _attrs_to_dict(handle[data_path].attrs)
 
-    raw = np.asarray(raw)
+        gain = _to_float(
+            what_attrs.get("gain", data_attrs.get("gain", 1.0)),
+            1.0,
+        )
+        offset = _to_float(
+            what_attrs.get("offset", data_attrs.get("offset", 0.0)),
+            0.0,
+        )
 
-    invalid_mask = np.zeros(raw.shape, dtype=bool)
+        nodata = what_attrs.get("nodata", data_attrs.get("nodata", None))
+        undetect = what_attrs.get("undetect", data_attrs.get("undetect", None))
+
+    data = raw.astype(out_dtype, copy=False)
+    data = np.asarray(data, dtype=out_dtype)
+
+    # nodata -> NaN
     if nodata is not None:
-        invalid_mask |= raw == nodata
+        try:
+            nodata_mask = (raw == nodata)
+            if np.any(nodata_mask):
+                data = data.copy()
+                data[nodata_mask] = np.nan
+        except Exception:
+            pass
+
+    # undetect -> 0.0
     if undetect is not None:
-        invalid_mask |= raw == undetect
-
-    data = (offset + gain * raw.astype(out_dtype)).astype(out_dtype, copy=False)
-
-    if np.any(invalid_mask):
-        data = data.astype(out_dtype, copy=False)
-        data[invalid_mask] = np.nan
+        try:
+            undetect_mask = (raw == undetect)
+            if np.any(undetect_mask):
+                if data is raw:
+                    data = data.copy()
+                data[undetect_mask] = 0.0
+        except Exception:
+            pass
 
     return data
-
-
-def _is_valid_hdf_path(value: Any) -> bool:
-    """
-    Return whether a value looks like a usable HDF file path.
-    """
-    if value is None:
-        return False
-
-    if isinstance(value, (str, np.str_)):
-        text = str(value).strip()
-        return bool(text) and text.lower() not in {"nan", "none", "null"}
-
-    return False
-
 
 def extract_first_path(cell: Any) -> str | None:
     """
@@ -156,6 +180,19 @@ def extract_first_path(cell: Any) -> str | None:
                     return text
 
     return None
+
+def _is_valid_hdf_path(value: Any) -> bool:
+    """
+    Return True if the input looks like a usable HDF path.
+    """
+    if value is None:
+        return False
+
+    if isinstance(value, (str, np.str_)):
+        text = str(value).strip()
+        return bool(text) and text.lower() not in {"nan", "none", "null"}
+
+    return False
 
 
 def append_odim_timestep_to_geozarr(
