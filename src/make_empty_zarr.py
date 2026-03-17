@@ -465,7 +465,7 @@ def create_empty_geozarr_single_variable_from_inventory(
                 "<simon.de.kock@vub.be,lesley.decruz@meteo.be>"
             ),
             "mlcast_created_with": (
-                "https://github.com/mlcast-community/mlcast-dataset-BE-RMI-radclim"
+                "https://github.com/mlcast-community/mlcast-dataset-BE-RMI-radclim@v1.0"
             ),
             "mlcast_dataset_version": "1.0",
             "mlcast_dataset_identifier": f"BE-radclim-{out_var_name}",
