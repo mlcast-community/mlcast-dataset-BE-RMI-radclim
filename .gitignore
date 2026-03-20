@@ -2,3 +2,4 @@
 *.parquet
 *.zarr
 
+*/__pycache__*

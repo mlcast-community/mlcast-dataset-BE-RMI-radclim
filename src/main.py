@@ -11,7 +11,7 @@ from populate_zarr import populate_geozarr_from_inventory_parquet
 # ---------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------
-EXAMPLE_HDF = Path("./../example.hdf")
+EXAMPLE_HDF = Path("./example.hdf")
 INVENTORY_PARQUET = Path("radclim_inventory_5min.parquet")
 STORE_PATH = Path("./BE-radclim-rain_rate.zarr")
 
@@ -49,7 +49,6 @@ def main() -> None:
         chunksize=CHUNKSIZE,
     )
     print(summary)
-
 
 if __name__ == "__main__":
     main()

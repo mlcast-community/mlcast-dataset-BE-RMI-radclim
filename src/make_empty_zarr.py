@@ -371,6 +371,26 @@ def infer_missing_timestamps_regular(time_values_ns: np.ndarray) -> np.ndarray:
     missing_times = np.setdiff1d(expected_times, times).astype("datetime64[ns]")
     return np.unique(missing_times)
 
+def insert_bbox_into_wkt_from_latlon(
+    crs: CRS,
+    lat: np.ndarray,
+    lon: np.ndarray,
+) -> str:
+    """
+    Insert WKT2 BBOX[min_lat, min_lon, max_lat, max_lon]
+    into a CRS WKT string using 2D lat/lon arrays.
+    """
+    min_lat = float(np.nanmin(lat))
+    max_lat = float(np.nanmax(lat))
+    min_lon = float(np.nanmin(lon))
+    max_lon = float(np.nanmax(lon))
+
+    wkt = crs.to_wkt()
+
+    if "BBOX[" in wkt:
+        return wkt
+
+    return wkt[:-1] + f",BBOX[{min_lat}, {min_lon}, {max_lat}, {max_lon}]]"
 
 def create_empty_geozarr_single_variable_from_inventory(
     store_path: str,
@@ -465,9 +485,9 @@ def create_empty_geozarr_single_variable_from_inventory(
                 "<simon.de.kock@vub.be,lesley.decruz@meteo.be>"
             ),
             "mlcast_created_with": (
-                "https://github.com/mlcast-community/mlcast-dataset-BE-RMI-radclim@v1.0"
+                "https://github.com/mlcast-community/mlcast-dataset-BE-RMI-radclim@v0.1.1"
             ),
-            "mlcast_dataset_version": "1.0",
+            "mlcast_dataset_version": "0.1.1",
             "mlcast_dataset_identifier": f"BE-radclim-{out_var_name}",
             "consistent_timestep_start": pd.Timestamp(times[0]).isoformat(),
             "coordinates": "time y x spatial_ref lat lon",
@@ -569,7 +589,8 @@ def create_empty_geozarr_single_variable_from_inventory(
         attrs={"standard_name": "longitude", "units": "degrees_east"},
     )
 
-    crs_wkt = grid.crs.to_wkt()
+    crs_wkt = insert_bbox_into_wkt_from_latlon(grid.crs, lat, lon)
+
     spatial_ref = create_array(
         "spatial_ref",
         shape=(),
