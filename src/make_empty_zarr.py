@@ -464,8 +464,7 @@ def create_empty_geozarr_single_variable_from_inventory(
             "contact": "Maryna Lukach <rad_op@meteo.be>",
             "mlcast_created_on": pd.Timestamp.now(tz="UTC").isoformat(),
             "mlcast_created_by": (
-                "Simon De Kock, Lesley De Cruz"
-                "<simon.de.kock@vub.be,lesley.decruz@meteo.be>"
+                "Simon De Kock, Lesley De Cruz <simon.de.kock@vub.be,lesley.decruz@meteo.be>"
             ),
             "mlcast_created_with": (
                 "https://github.com/mlcast-community/mlcast-dataset-BE-RMI-radclim@v{version}"
