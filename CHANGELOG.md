@@ -12,4 +12,4 @@ First release of the code to generate a zarr version of the BE-RMI RADCLIM produ
 ## v0.1.1
 
 Changed the reading of HDF files to disrefgard gain and offset. This was an artifact in the original HDF data at the RMI and should not be used
-Added the versioning at the end of the mlcast gihub link again
+Added the versioning at the end of the mlcast gihub link again. Fixed a projection issue which made it hard to plot the data directly using xarray
