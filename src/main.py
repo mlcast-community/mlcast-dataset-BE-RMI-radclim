@@ -13,7 +13,7 @@ from populate_zarr import populate_geozarr_from_inventory_parquet
 # ---------------------------------------------------------------------
 EXAMPLE_HDF = Path("./example.hdf")
 INVENTORY_PARQUET = Path("radclim_inventory_5min.parquet")
-STORE_PATH = Path("./BE-radclim-rain_rate.zarr")
+STORE_PATH = Path("./BE-radclim-mfb-rain_rate.zarr")
 
 SOURCE_VAR = "rate_qpe_mfb"
 OUT_VAR_NAME = "rain_rate"

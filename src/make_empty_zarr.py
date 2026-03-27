@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+import cartopy.crs as ccrs
 import h5py
 import numpy as np
 import pandas as pd
@@ -371,27 +372,7 @@ def infer_missing_timestamps_regular(time_values_ns: np.ndarray) -> np.ndarray:
     missing_times = np.setdiff1d(expected_times, times).astype("datetime64[ns]")
     return np.unique(missing_times)
 
-def insert_bbox_into_wkt_from_latlon(
-    crs: CRS,
-    lat: np.ndarray,
-    lon: np.ndarray,
-) -> str:
-    """
-    Insert WKT2 BBOX[min_lat, min_lon, max_lat, max_lon]
-    into a CRS WKT string using 2D lat/lon arrays.
-    """
-    min_lat = float(np.nanmin(lat))
-    max_lat = float(np.nanmax(lat))
-    min_lon = float(np.nanmin(lon))
-    max_lon = float(np.nanmax(lon))
-
-    wkt = crs.to_wkt()
-
-    if "BBOX[" in wkt:
-        return wkt
-
-    return wkt[:-1] + f",BBOX[{min_lat}, {min_lon}, {max_lat}, {max_lon}]]"
-
+    
 def create_empty_geozarr_single_variable_from_inventory(
     store_path: str,
     inventory_parquet: str,
@@ -473,22 +454,24 @@ def create_empty_geozarr_single_variable_from_inventory(
 
     store = zarr.storage.LocalStore(store_path)
     root = zarr.open_group(store, mode="w", zarr_format=3)
+    version = "0.1.1"
 
     root.attrs.update(
         {
             "Conventions": "CF-1.10",
             "license": "CC-BY-4.0",
             "institute": "Royal Meteorological Institute of Belgium",
+            "contact": "Maryna Lukach <rad_op@meteo.be>",
             "mlcast_created_on": pd.Timestamp.now(tz="UTC").isoformat(),
             "mlcast_created_by": (
-                "Simon De Kock, Lesley De Cruz "
+                "Simon De Kock, Lesley De Cruz"
                 "<simon.de.kock@vub.be,lesley.decruz@meteo.be>"
             ),
             "mlcast_created_with": (
-                "https://github.com/mlcast-community/mlcast-dataset-BE-RMI-radclim@v0.1.1"
+                "https://github.com/mlcast-community/mlcast-dataset-BE-RMI-radclim@v{version}"
             ),
-            "mlcast_dataset_version": "0.1.1",
-            "mlcast_dataset_identifier": f"BE-radclim-{out_var_name}",
+            "mlcast_dataset_version": version,
+            "mlcast_dataset_identifier": f"BE-radclim-mfb-{out_var_name}",
             "consistent_timestep_start": pd.Timestamp(times[0]).isoformat(),
             "coordinates": "time y x spatial_ref lat lon",
         }
@@ -589,7 +572,21 @@ def create_empty_geozarr_single_variable_from_inventory(
         attrs={"standard_name": "longitude", "units": "degrees_east"},
     )
 
-    crs_wkt = insert_bbox_into_wkt_from_latlon(grid.crs, lat, lon)
+    # Strip BoundCRS wrapper (produced when projdef contains +towgs84 params).
+    # Build crs_wkt via cartopy so the stored WKT can be used with ccrs.Projection(crs_wkt) for plotting.
+    _crs = grid.crs.source_crs if grid.crs.is_bound else grid.crs
+    proj4 = _crs.to_proj4()
+    cartopy_crs = ccrs.CRS(CRS.from_proj4(proj4))
+    crs_wkt = cartopy_crs.to_wkt()
+
+    # Embed a BBOX[] extent into the WKT (same pattern as DMI dataset)
+    min_lat = float(np.min(lat))
+    min_lon = float(np.min(lon))
+    max_lat = float(np.max(lat))
+    max_lon = float(np.max(lon))
+    bbox_str = f"BBOX[{min_lat}, {min_lon}, {max_lat}, {max_lon}]"
+    last_bracket_index = crs_wkt.rfind("]")
+    crs_wkt = crs_wkt[:last_bracket_index] + f", {bbox_str}" + crs_wkt[last_bracket_index:]
 
     spatial_ref = create_array(
         "spatial_ref",
@@ -602,6 +599,7 @@ def create_empty_geozarr_single_variable_from_inventory(
             **grid.crs.to_cf(),
             "spatial_ref": crs_wkt,
             "crs_wkt": crs_wkt,
+            "proj4": proj4,
             "projdef_original": grid.projdef,
             "GeoTransform": " ".join(map(str, grid.geotransform)),
         },
