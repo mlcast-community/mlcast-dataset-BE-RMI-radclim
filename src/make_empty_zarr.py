@@ -461,7 +461,7 @@ def create_empty_geozarr_single_variable_from_inventory(
             "Conventions": "CF-1.10",
             "license": "CC-BY-4.0",
             "institute": "Royal Meteorological Institute of Belgium",
-            "contact": "Maryna Lukach <maryna.lukach@meteo.be>",
+            "contact": "Maryna Lukach <rad_op@meteo.be>",
             "mlcast_created_on": pd.Timestamp.now(tz="UTC").isoformat(),
             "mlcast_created_by": (
                 "Simon De Kock, Lesley De Cruz"
