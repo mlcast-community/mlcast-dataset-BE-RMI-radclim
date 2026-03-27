@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+import cartopy.crs as ccrs
 import h5py
 import numpy as np
 import pandas as pd
@@ -571,11 +572,12 @@ def create_empty_geozarr_single_variable_from_inventory(
         attrs={"standard_name": "longitude", "units": "degrees_east"},
     )
 
-    # Strip BoundCRS wrapper (produced when projdef contains +towgs84 params)
-    # so that the stored WKT is a plain ProjectedCRS
+    # Strip BoundCRS wrapper (produced when projdef contains +towgs84 params).
+    # Build crs_wkt via cartopy so the stored WKT can be used with ccrs.Projection(crs_wkt) for plotting.
     _crs = grid.crs.source_crs if grid.crs.is_bound else grid.crs
-    crs_wkt = _crs.to_wkt()
     proj4 = _crs.to_proj4()
+    cartopy_crs = ccrs.CRS(CRS.from_proj4(proj4))
+    crs_wkt = cartopy_crs.to_wkt()
 
     # Embed a BBOX[] extent into the WKT (same pattern as DMI dataset)
     min_lat = float(np.min(lat))
