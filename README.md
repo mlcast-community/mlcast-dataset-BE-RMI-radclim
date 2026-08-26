@@ -96,7 +96,7 @@ In summary, the process is:
 | `--variable` | `acrr_qpe_mfb_5m` | Inventory column to read, and the name of the output variable in the Zarr store (e.g. `acrr_qpe_mfb_5m` for the 5-minute accumulation, or `rate_qpe_mfb` for the 5-minute instantaneous rain rate). |
 | `--store-path` | see `main.py` | Output Zarr store path. |
 | `--clevel` | `9` | Blosc compression level, 0–9. |
-| `--shuffle` | `bitshuffle` | Blosc shuffle filter: `noshuffle`, `shuffle`, or `bitshuffle`. (The best balance between very high compression and reasonable processing speed is `noshuffle` |
+| `--shuffle` | `bitshuffle` | Blosc shuffle filter: `noshuffle`, `shuffle`, or `bitshuffle`. (The best balance between very high compression and reasonable processing speed is `noshuffle`, `shuffle` is a few procent more efficient compression for acrr but worse for rates. `bitshuffle` is always 15% worse) |
 | `--start-date` | none (full inventory) | Inclusive start date (e.g. `2020-01-01`) to scope the run to a subset of the inventory. |
 | `--end-date` | none (full inventory) | Exclusive end date (e.g. `2020-02-01`) to scope the run to a subset of the inventory. |
 
