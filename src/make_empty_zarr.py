@@ -477,6 +477,7 @@ def create_empty_geozarr_single_variable_from_inventory(
 
     store = zarr.storage.LocalStore(store_path)
     root = zarr.open_group(store, mode="w", zarr_format=3)
+    version = "0.2.0"
 
     root.attrs.update(
         {
@@ -489,9 +490,9 @@ def create_empty_geozarr_single_variable_from_inventory(
                 "<simon.de.kock@vub.be,lesley.decruz@meteo.be>"
             ),
             "mlcast_created_with": (
-                "https://github.com/mlcast-community/mlcast-dataset-BE-RMI-radclim@v0.1.1"
+                f"https://github.com/mlcast-community/mlcast-dataset-BE-RMI-radclim@v{version}"
             ),
-            "mlcast_dataset_version": "0.1.1",
+            "mlcast_dataset_version": version,
             "mlcast_dataset_identifier": f"BE-radclim-{out_var_name}",
             "consistent_timestep_start": pd.Timestamp(times[0]).isoformat(),
             "coordinates": "time y x spatial_ref lat lon",
@@ -646,4 +647,5 @@ def create_empty_geozarr_single_variable_from_inventory(
         zarr_format=3,
         use_zarr_fill_value_as_mask=use_zarr_fill_value_as_mask,
     )
+
 
