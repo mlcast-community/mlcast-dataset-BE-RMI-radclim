@@ -481,6 +481,7 @@ def create_empty_geozarr_single_variable_from_inventory(
 
     root.attrs.update(
         {
+            "Author": "Edouard Goudenhoofdt, Laurent Delobbe, Maryna Lukach",
             "Conventions": "CF-1.10",
             "license": "CC-BY-4.0",
             "institute": "Royal Meteorological Institute of Belgium",
