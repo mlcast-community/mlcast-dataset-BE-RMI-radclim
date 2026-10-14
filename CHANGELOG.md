@@ -17,3 +17,8 @@ Added the versioning at the end of the mlcast gihub link again. Fixed a projecti
 ## v0.2.0
 
 Switched compression from plain Zstandard to Blosc (zstd + configurable shuffle filter, exposed via a new `shuffle` parameter). Also added command-line options to `src/main.py`: `--clevel` and `--shuffle` to tune compression, `--variable` to select which inventory column/output variable to build, and `--start-date`/`--end-date` to scope a run to a subset of the inventory instead of the full archive. This makes it much faster to test compression settings (or anything else) on a short time window before committing to a full multi-year run.
+
+## v0.2.1
+
+Added authors list.
+
