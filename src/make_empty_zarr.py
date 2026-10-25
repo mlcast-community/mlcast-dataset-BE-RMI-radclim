@@ -477,7 +477,7 @@ def create_empty_geozarr_single_variable_from_inventory(
 
     store = zarr.storage.LocalStore(store_path)
     root = zarr.open_group(store, mode="w", zarr_format=3)
-    version = "0.2.0"
+    version = "0.2.1"
 
     root.attrs.update(
         {
